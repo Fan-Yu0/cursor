@@ -11,7 +11,7 @@ class Config:
         self.imap_port = '993'
         self.imap_user = 'fanj0011@qq.com'
         self.imap_pass = 'pakubxonbcibeedd'
-        self.imap_dir = '&UXZO1mWHTvZZOQ-/cursor'
+        self.imap_dir = 'INBOX'
 
         self.check_config()
 

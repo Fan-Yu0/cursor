@@ -55,7 +55,6 @@ class EmailVerificationHandler:
                     mail.store(latest_mail_id, '+FLAGS', '\\Deleted')
                     mail.expunge()
                     mail.logout()
-                    # print(f"找到的验证码: {code}")
                     return code
             # print("未找到验证码")
             mail.logout()
