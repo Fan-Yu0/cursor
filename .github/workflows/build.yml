@@ -144,6 +144,7 @@ jobs:
             artifacts/CursorPro-MacOS-ARM64.zip
             artifacts/CursorPro-Linux.zip
             artifacts/CursorPro-MacOS-Intel.zip
+            
 
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
