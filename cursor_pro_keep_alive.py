@@ -521,6 +521,7 @@ if __name__ == "__main__":
                     email=account, access_token=token, refresh_token=token
                 )
 
+
                 logging.info("重置机器码...")
                 reset_machine_id(greater_than_0_45)
                 logging.info("所有操作已完成")
