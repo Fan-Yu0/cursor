@@ -2,8 +2,8 @@ name: Build Executables
 
 on:
   push:
-    tags:
-      - 'v*'  # 添加标签触发条件，匹配 v1.0.0 这样的标签
+    branches:
+      - main
 
 jobs:
   build-windows:
