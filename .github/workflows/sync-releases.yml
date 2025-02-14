@@ -1,0 +1,49 @@
+name: Sync Releases to Gitee
+
+on:
+  release:
+    types: [published]  # 当发布新的 release 时触发
+  workflow_dispatch:    # 支持手动触发
+
+jobs:
+  sync-releases:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 获取所有历史记录和标签
+      
+      - name: Get release info
+        id: release
+        run: |
+          echo "tag_name=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+          echo "release_name=$(git tag -l --format='%(subject)' $(git describe --tags --abbrev=0))" >> $GITHUB_OUTPUT
+      
+      - name: Download release assets
+        run: |
+          mkdir -p release_assets
+          gh release download ${{ steps.release.outputs.tag_name }} --dir release_assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Create Gitee Release
+        run: |
+          # 安装 gitee-release-action
+          curl -fsSL https://gitee.com/mirrors/hub/raw/master/install | bash -s 2.14.2
+          
+          # 配置 Gitee
+          git remote add gitee https://oauth2:${{ secrets.GITEE_TOKEN }}@gitee.com/FJY1226/cursor.git
+          
+          # 推送标签
+          git push gitee ${{ steps.release.outputs.tag_name }}
+          
+          # 创建 release
+          hub release create \
+            --repo gitee.com/FJY1226/cursor \
+            -a release_assets/* \
+            -m "${{ steps.release.outputs.release_name }}" \
+            ${{ steps.release.outputs.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }} 
