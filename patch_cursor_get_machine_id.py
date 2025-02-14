@@ -55,7 +55,7 @@ def get_cursor_paths() -> Tuple[str, str]:
             "main": "out/main.js",
         },
         "Linux": {
-            "bases": ["/opt/Cursor/resources/app", "/usr/share/cursor/resources/app"],
+            "bases": ["/opt/Cursor/resources/app", "/usr/share/cursor/resources/app","/home/ubt/.config/Cursor"],
             "package": "package.json",
             "main": "out/main.js",
         },

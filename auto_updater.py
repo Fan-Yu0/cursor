@@ -6,6 +6,8 @@ from pathlib import Path
 import os
 import zipfile
 import shutil
+import tempfile
+import time
 
 import requests
 from packaging import version
@@ -13,16 +15,17 @@ from packaging import version
 
 class AutoUpdater:
     def __init__(self):
-        self.current_version = "1.0.4"  # 当前版本号
-        self.github_api = "https://api.github.com/repos/Fan-Yu0/cursor/releases/latest"
+        self.current_version = "1.0.0"
+        self.gitee_api = "https://gitee.com/api/v5/repos/FJY1226/cursor/releases/latest"
         self.app_dir = Path(__file__).parent
-        self.tmp_dir = self.app_dir / "temp"
+        # 使用系统临时目录
+        self.tmp_dir = Path(tempfile.gettempdir()) / "cursor_update"
         self.os_type = platform.system()
 
     def check_for_updates(self):
         """检查是否有新版本"""
         try:
-            response = requests.get(self.github_api)
+            response = requests.get(self.gitee_api)
             if response.status_code == 200:
                 latest_release = response.json()
                 latest_version = latest_release["tag_name"].lstrip("v")
@@ -40,16 +43,38 @@ class AutoUpdater:
     def download_update(self, asset_url):
         """下载更新文件"""
         try:
-            response = requests.get(asset_url, stream=True)
+            headers = {
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/octet-stream"
+            }
+            
+            response = requests.get(
+                asset_url,
+                headers=headers,
+                stream=True,
+                timeout=30
+            )
+            
             if response.status_code == 200:
-                # 确保临时目录存在
-                self.tmp_dir.mkdir(exist_ok=True)
+                # 确保临时目录存在并有写入权限
+                self.tmp_dir.mkdir(parents=True, exist_ok=True)
                 
-                # 下载文件
-                file_path = self.tmp_dir / "update.zip"
+                # 使用唯一的临时文件名
+                file_path = self.tmp_dir / f"update_{int(time.time())}.zip"
+                
+                total_size = int(response.headers.get('content-length', 0))
+                block_size = 1024
+                downloaded = 0
+                
                 with open(file_path, "wb") as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        f.write(chunk)
+                    for chunk in response.iter_content(chunk_size=block_size):
+                        if chunk:
+                            f.write(chunk)
+                            downloaded += len(chunk)
+                            if total_size > 0:
+                                percent = int(downloaded * 100 / total_size)
+                                logging.info(f"下载进度: {percent}%")
+                
                 return file_path
             return None
         except Exception as e:
@@ -74,21 +99,55 @@ class AutoUpdater:
 
     def _install_update_windows(self, file_path):
         """Windows 更新安装逻辑"""
-        # 创建更新批处理文件
-        update_script = self.tmp_dir / "update.bat"
-        with open(update_script, "w") as f:
-            f.write(f"""
-@echo off
-timeout /t 2 /nobreak
-powershell Expand-Archive -Path "{file_path}" -DestinationPath "{self.app_dir}" -Force
-del "{file_path}"
-start "" "{sys.executable}" "{self.app_dir / 'main.py'}"
+        try:
+            import zipfile
+            import shutil
+            
+            # 使用系统临时目录创建更新脚本
+            update_script = self.tmp_dir / f"update_{int(time.time())}.bat"
+            app_path = self.app_dir.resolve()
+            file_path = Path(file_path).resolve()
+            
+            with open(update_script, "w", encoding='utf-8') as f:
+                f.write(f"""@echo off
+echo 正在更新程序...
+timeout /t 2 /nobreak > nul
+
+rem 解压更新包
+powershell -Command "Expand-Archive -Path '{file_path}' -DestinationPath '{app_path}' -Force"
+if errorlevel 1 (
+    echo 解压更新失败
+    pause
+    exit /b 1
+)
+
+rem 删除临时文件
+del /f /q "{file_path}"
+rmdir /s /q "{self.tmp_dir}"
+
+rem 重启应用
+start "" "{sys.executable}" "{app_path / 'main.py'}"
+
+rem 删除更新脚本
 del "%~f0"
-            """)
-        
-        # 执行更新脚本
-        subprocess.Popen([update_script], shell=True)
-        sys.exit(0)
+""")
+            
+            # 执行更新脚本
+            logging.info("开始执行更新脚本...")
+            subprocess.Popen(
+                ['cmd', '/c', str(update_script)],
+                creationflags=subprocess.CREATE_NEW_CONSOLE,
+                cwd=str(self.app_dir)
+            )
+            
+            logging.info("更新程序已启动，当前程序将退出...")
+            sys.exit(0)
+            
+        except Exception as e:
+            logging.error(f"Windows 更新安装失败: {e}")
+            if self.tmp_dir.exists():
+                shutil.rmtree(self.tmp_dir, ignore_errors=True)
+            raise
 
     def _install_update_macos(self, file_path):
         """macOS 更新安装逻辑"""
