@@ -4,6 +4,11 @@ on:
   release:
     types: [published]  # 当发布新的 release 时触发
   workflow_dispatch:    # 支持手动触发
+    inputs:
+      tag_name:
+        description: '指定要同步的版本标签 (例如: v1.0.0)'
+        required: false
+        type: string
 
 jobs:
   sync-releases:
@@ -17,13 +22,37 @@ jobs:
       - name: Get release info
         id: release
         run: |
-          echo "tag_name=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
-          echo "release_name=$(git tag -l --format='%(subject)' $(git describe --tags --abbrev=0))" >> $GITHUB_OUTPUT
+          if [ "${{ github.event.inputs.tag_name }}" != "" ]; then
+            # 使用手动输入的标签
+            TAG="${{ github.event.inputs.tag_name }}"
+          else
+            # 获取最新标签
+            TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          fi
+          
+          if [ -z "$TAG" ]; then
+            echo "错误: 未找到任何标签"
+            exit 1
+          fi
+          
+          echo "tag_name=$TAG" >> $GITHUB_OUTPUT
+          echo "release_name=$(git tag -l --format='%(subject)' $TAG)" >> $GITHUB_OUTPUT
+          
+          # 验证 release 是否存在
+          if ! gh release view $TAG &>/dev/null; then
+            echo "错误: Release $TAG 不存在"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Download release assets
         run: |
           mkdir -p release_assets
-          gh release download ${{ steps.release.outputs.tag_name }} --dir release_assets
+          gh release download ${{ steps.release.outputs.tag_name }} --dir release_assets || {
+            echo "错误: 下载 release 资源失败"
+            exit 1
+          }
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
