@@ -428,11 +428,11 @@ if __name__ == "__main__":
     browser_manager = None
     try:
 
-        # print("检测更新...")
-        # updater = AutoUpdater()
-        # if updater.auto_update():
-        #     logging.info("已自动更新程序")
-        #     sys.exit(0)
+        print("检测更新...")
+        updater = AutoUpdater()
+        if updater.auto_update():
+            logging.info("已自动更新程序")
+            sys.exit(0)
 
         logging.info("\n=== 初始化程序 ===")
         ExitCursor()

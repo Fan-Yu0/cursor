@@ -140,6 +140,7 @@ exit 0
 
     def auto_update(self):
         """执行自动更新流程"""
+        print("检查更新中...")
         latest_release = self.check_for_updates()
         if latest_release:
             # 获取对应操作系统的下载链接

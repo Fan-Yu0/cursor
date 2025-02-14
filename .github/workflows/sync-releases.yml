@@ -27,23 +27,51 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Create Gitee Release
+      - name: Install Gitee CLI
         run: |
-          # 安装 gitee-release-action
-          curl -fsSL https://gitee.com/mirrors/hub/raw/master/install | bash -s 2.14.2
+          wget -q https://gitee.com/mirrors/gitee-cli/raw/master/install.sh -O install.sh
+          chmod +x install.sh
+          sudo ./install.sh
           
+      - name: Sync to Gitee
+        run: |
           # 配置 Gitee
           git remote add gitee https://oauth2:${{ secrets.GITEE_TOKEN }}@gitee.com/FJY1226/cursor.git
           
           # 推送标签
           git push gitee ${{ steps.release.outputs.tag_name }}
           
-          # 创建 release
-          hub release create \
-            --repo gitee.com/FJY1226/cursor \
-            -a release_assets/* \
-            -m "${{ steps.release.outputs.release_name }}" \
-            ${{ steps.release.outputs.tag_name }}
+          # 使用 Gitee API 创建 release
+          for file in release_assets/*; do
+            if [ -f "$file" ]; then
+              files+=("-F" "attach[]=@$file")
+            fi
+          done
+          
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITEE_TOKEN }}" \
+            -H "Content-Type: multipart/form-data" \
+            "${files[@]}" \
+            -F "access_token=${{ secrets.GITEE_TOKEN }}" \
+            -F "tag_name=${{ steps.release.outputs.tag_name }}" \
+            -F "name=${{ steps.release.outputs.tag_name }}" \
+            -F "body=${{ steps.release.outputs.release_name }}" \
+            "https://gitee.com/api/v5/repos/FJY1226/cursor/releases"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }} 
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+
+      - name: Handle errors
+        if: failure()
+        run: |
+          echo "同步失败，正在检查错误..."
+          if ! git remote -v | grep gitee; then
+            echo "Gitee remote 添加失败"
+          fi
+          
+          echo "检查 release_assets 目录内容："
+          ls -la release_assets/
+          
+          echo "检查 Gitee API 响应："
+          curl -s -H "Authorization: token ${{ secrets.GITEE_TOKEN }}" \
+            "https://gitee.com/api/v5/repos/FJY1226/cursor/releases" | jq '.' 
