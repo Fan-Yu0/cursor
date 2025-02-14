@@ -407,6 +407,7 @@ class CardKeyVerifier:
                 result = response.json()
                 if result.get("success") == True:  # 假设0表示成功
                     logging.info(f"{EMOJI['INFO']} 卡密验证成功")
+                    logging.info(f"卡密过期时间: {result.get('time')}")
                     return True
                 else:
                     error_msg = result.get("message", "未知错误")
@@ -432,7 +433,7 @@ if __name__ == "__main__":
         updater = AutoUpdater()
         if updater.auto_update():
             logging.info("已自动更新程序")
-            logging.info("请重新运行程序")
+            logging.info("请运行当前目录下的新程序")
             sys.exit(0)
 
         logging.info("\n=== 初始化程序 ===")

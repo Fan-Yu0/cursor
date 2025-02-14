@@ -2,13 +2,22 @@ import platform
 import os
 import subprocess
 from logger import logging
+import sys
 
 
 def go_cursor_help():
     system = platform.system()
     logging.info(f"当前操作系统: {system}")
 
-    script_folder = "sh"
+    # 获取程序运行时的绝对路径
+    if getattr(sys, 'frozen', False):
+        # 如果是打包后的exe运行
+        script_folder = os.path.join(sys._MEIPASS, "sh")
+    else:
+        # 如果是直接运行python脚本
+        script_folder = "sh"
+    
+    logging.info(f"脚本文件夹路径: {script_folder}")
 
     if system == "Darwin":  # macOS
         script_path = os.path.join(script_folder, "cursor_mac_id_modifier.sh")

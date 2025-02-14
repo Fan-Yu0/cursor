@@ -15,7 +15,7 @@ from packaging import version
 
 class AutoUpdater:
     def __init__(self):
-        self.current_version = "1.0.53"
+        self.current_version = "1.0.54"
         self.github_api = "https://api.github.com/repos/Fan-Yu0/cursor/releases/latest"
         
         # 获取当前程序路径
@@ -213,6 +213,7 @@ echo 正在复制新文件...
 xcopy /s /e /y "{new_dir_str}\\*" "{app_path_str}\\"
 if %errorlevel% neq 0 (
     echo 复制文件失败，正在恢复备份...
+    echo 请打开当前目录下的temp文件夹，将其中的文件复制到程序目录中
     xcopy /s /e /y "{backup_dir_str}\\*" "{app_path_str}\\"
     pause
     exit /b 1
@@ -316,6 +317,7 @@ echo 正在复制新文件...
 cp -R "{new_dir}/"* "{app_path}/"
 if [ $? -ne 0 ]; then
     echo "复制文件失败，正在恢复备份..."
+    echo "请打开当前目录下的temp文件夹，将其中的文件复制到程序目录中"
     cp -R "{backup_dir}/"* "{app_path}/"
     read -p "按回车键继续..."
     exit 1
@@ -374,6 +376,7 @@ rm "$0"
                 update_file = self.download_update(asset_url)
                 if update_file:
                     logging.info("开始安装更新...")
+                    logging.info("请打开当前目录下的temp文件夹，将其中的文件复制到程序目录中")
                     if self.install_update(update_file):
                         logging.info("更新成功！")
                         return True
