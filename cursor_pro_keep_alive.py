@@ -4,7 +4,9 @@ import sys
 from enum import Enum
 from typing import Optional
 
+import go_cursor_help
 import patch_cursor_get_machine_id
+from exit_cursor import ExitCursor
 from reset_machine import MachineIDResetter
 
 os.environ["PYTHONVERBOSE"] = "0"
@@ -19,6 +21,8 @@ from browser_utils import BrowserManager
 from get_email_code import EmailVerificationHandler
 from logo import print_logo
 from config import Config
+from auto_updater import AutoUpdater
+
 
 # 定义 EMOJI 字典
 EMOJI = {"ERROR": "❌", "WARNING": "⚠️", "INFO": "ℹ️"}
@@ -232,8 +236,7 @@ def sign_up_account(browser, tab):
     handle_turnstile(tab)
 
     try:
-        if tab.ele("@name=password", timeout=10):
-            logging.info(f"{EMOJI['INFO']} 开始注册账号...")
+        if tab.ele("@name=password"):
             logging.info("正在设置密码...")
             tab.ele("@name=password").input(password)
             time.sleep(random.uniform(1, 3))
@@ -242,11 +245,8 @@ def sign_up_account(browser, tab):
             tab.ele("@type=submit").click()
             logging.info("密码设置完成，等待系统响应...")
 
-    except KeyboardInterrupt:
-        logging.warning(f"{EMOJI['WARNING']} 用户中断操作")
-        return False
     except Exception as e:
-        logging.error(f"{EMOJI['ERROR']} 注册过程出错: {str(e)}")
+        logging.error(f"密码设置失败: {str(e)}")
         return False
 
     if tab.ele("This email is not available."):
@@ -373,8 +373,7 @@ def check_cursor_version():
 
 def reset_machine_id(greater_than_0_45):
     if greater_than_0_45:
-        # 提示请手动执行脚本 https://github.com/chengazhen/cursor-auto-free/blob/main/patch_cursor_get_machine_id.py
-        patch_cursor_get_machine_id.patch_cursor_get_machine_id()
+        go_cursor_help.go_cursor_help()
     else:
         MachineIDResetter().reset_machine_ids()
 
@@ -428,10 +427,15 @@ if __name__ == "__main__":
     greater_than_0_45 = check_cursor_version()
     browser_manager = None
     try:
-        logging.info("\n=== 初始化程序 ===")
-        # ExitCursor()
 
-        # 初始化卡密验证器
+        # print("检测更新...")
+        # updater = AutoUpdater()
+        # if updater.auto_update():
+        #     logging.info("已自动更新程序")
+        #     sys.exit(0)
+
+        logging.info("\n=== 初始化程序 ===")
+        ExitCursor()
         verifier = CardKeyVerifier()
 
         print("卡密购买地址：http://faka.fyi/LDzVN")
@@ -447,6 +451,7 @@ if __name__ == "__main__":
             sys.exit(1)
 
         logging.info("卡密验证成功,正在初始化...")
+
 
         # 提示用户选择操作模式
         print("\n请选择操作模式:")
