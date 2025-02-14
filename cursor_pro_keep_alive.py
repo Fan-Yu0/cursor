@@ -429,10 +429,11 @@ if __name__ == "__main__":
     try:
 
         print("检测更新...")
-        # updater = AutoUpdater()
-        # if updater.auto_update():
-        #     logging.info("已自动更新程序")
-        #     sys.exit(0)
+        updater = AutoUpdater()
+        if updater.auto_update():
+            logging.info("已自动更新程序")
+            logging.info("请重新运行程序")
+            sys.exit(0)
 
         logging.info("\n=== 初始化程序 ===")
         ExitCursor()
