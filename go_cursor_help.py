@@ -7,7 +7,7 @@ from logger import logging
 def go_cursor_help():
     system = platform.system()
     logging.info(f"当前操作系统: {system}")
-    base_url = "https://aizaozao.com/accelerate.php/https://github.com/Fan-Yu0/cursor/blob/main/sh"
+    base_url = "https://aizaozao.com/accelerate.php/https://raw.githubusercontent.com/Fan-Yu0/cursor/refs/heads/main/sh"
 
     if system == "Darwin":  # macOS
         cmd = f'curl -fsSL {base_url}/cursor_mac_id_modifier.sh | sudo bash'
