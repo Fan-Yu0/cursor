@@ -30,8 +30,16 @@ class AutoUpdater:
         self.tmp_dir = self.app_dir / "temp"
         self.os_type = platform.system()
         
+        # 添加 CPU 架构检测
+        self.arch = platform.machine().lower()
+        # 对于 macOS，将 arm64 映射为 ARM64，x86_64 映射为 Intel
+        if self.os_type == "Darwin":
+            self.arch = "ARM64" if self.arch == "arm64" else "Intel"
+        
         logging.info(f"程序目录: {self.app_dir}")
         logging.info(f"临时目录: {self.tmp_dir}")
+        logging.info(f"系统类型: {self.os_type}")
+        logging.info(f"CPU架构: {self.arch}")
 
     def check_for_updates(self):
         """检查是否有新版本"""
@@ -367,11 +375,23 @@ rm "$0"
             # 获取对应操作系统的下载链接
             asset_url = None
             for asset in latest_release["assets"]:
-                if self.os_type.lower() in asset["name"].lower():
-                    asset_url = asset["browser_download_url"]
-                    break
+                asset_name = asset["name"].lower()
+                if self.os_type == "Windows":  # Windows
+                    if "windows" in asset_name:
+                        asset_url = asset["browser_download_url"]
+                        break
+                elif self.os_type == "Darwin":  # macOS
+                    # 检查是否同时匹配操作系统和架构
+                    if "macos" in asset_name and self.arch.lower() in asset_name:
+                        asset_url = asset["browser_download_url"]
+                        break
+                else:  # 其他操作系统
+                    if self.os_type.lower() in asset_name:
+                        asset_url = asset["browser_download_url"]
+                        break
             
             if asset_url:
+                logging.info(f"找到匹配的更新包: {asset_url}")
                 logging.info("开始下载更新...")
                 update_file = self.download_update(asset_url)
                 if update_file:
