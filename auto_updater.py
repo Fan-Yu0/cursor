@@ -15,7 +15,7 @@ from packaging import version
 
 class AutoUpdater:
     def __init__(self):
-        self.current_version = "1.0.57"
+        self.current_version = "1.0.58"
         self.github_api = "https://api.github.com/repos/Fan-Yu0/cursor/releases/latest"
         
         # 获取当前程序路径
