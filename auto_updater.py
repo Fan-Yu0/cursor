@@ -15,7 +15,7 @@ from packaging import version
 
 class AutoUpdater:
     def __init__(self):
-        self.current_version = "1.0.58"
+        self.current_version = "1.0.57"
         self.github_api = "https://api.github.com/repos/Fan-Yu0/cursor/releases/latest"
         
         # 获取当前程序路径
@@ -391,7 +391,6 @@ rm "$0"
                         break
             
             if asset_url:
-                logging.info(f"找到匹配的更新包: {asset_url}")
                 logging.info("开始下载更新...")
                 update_file = self.download_update(asset_url)
                 if update_file:
